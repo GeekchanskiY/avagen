@@ -40,6 +40,7 @@ func (g *generator) Generate(s *scene.Scene) error {
 	rotatedRevTriangleColors := g.rotateRev(triangleColors)
 	reversedTriangleColors := g.reverse(triangleColors)
 	circleColors := g.generateCircle(g.squareSize, s.FgColor, s.BgColor)
+	circleFilledColors := g.generateFilledCircle(g.squareSize, s.FgColor, s.BgColor)
 
 	for i := 0; i < g.squareSize; i++ {
 		for j := 0; j < g.squareSize; j++ {
@@ -50,6 +51,7 @@ func (g *generator) Generate(s *scene.Scene) error {
 			s.Img.Set(i+g.squareSize*4, j, reversedTriangleColors[i][j])
 			s.Img.Set(i+g.squareSize*5, j, rotatedRevTriangleColors[i][j])
 			s.Img.Set(i+g.squareSize*6, j, circleColors[i][j])
+			s.Img.Set(i+g.squareSize*7, j, circleFilledColors[i][j])
 		}
 	}
 
@@ -149,10 +151,38 @@ func (g *generator) generateTriangle(squareSize int, fg, bg color.RGBA) [][]colo
 
 func (g *generator) generateCircle(squareSize int, fg, bg color.RGBA) [][]color.RGBA {
 	var (
-		radius = squareSize / 2
+		radius = (squareSize - 2) / 2
 		center = point.Point{
-			X: radius,
-			Y: radius,
+			X: squareSize / 2,
+			Y: squareSize / 2,
+		}
+
+		circleColors = make([][]color.RGBA, squareSize)
+	)
+
+	radiusPow := math.Pow(float64(radius), 2)
+
+	for x := 0; x < squareSize; x++ {
+		circleColors[x] = make([]color.RGBA, squareSize)
+		for y := 0; y < squareSize; y++ {
+			diff := math.Pow(float64(center.X-x), 2) + math.Pow(float64(center.Y-y), 2) - radiusPow
+			if diff >= float64(-squareSize/2) && diff <= float64(squareSize/2) {
+				circleColors[x][y] = fg
+			} else {
+				circleColors[x][y] = bg
+			}
+		}
+	}
+
+	return circleColors
+}
+
+func (g *generator) generateFilledCircle(squareSize int, fg, bg color.RGBA) [][]color.RGBA {
+	var (
+		radius = (squareSize - 2) / 2
+		center = point.Point{
+			X: squareSize / 2,
+			Y: squareSize / 2,
 		}
 
 		circleColors = make([][]color.RGBA, squareSize)
