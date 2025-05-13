@@ -36,6 +36,11 @@ func (g *generator) Generate(s *scene.Scene, numSquares int) error {
 	g.bgColor = getRandomBgColor()
 	g.fgColor = getRandomFgColor()
 
+	s.BgColor = g.bgColor
+	s.FgColor = g.fgColor
+
+	s.Clear()
+
 	// Generate figures
 	figures := make([][]figure, numSquares)
 	for i := 0; i < numSquares; i++ {
