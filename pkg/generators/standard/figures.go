@@ -13,12 +13,12 @@ type figure [][]color.RGBA
 
 // generateRandomFigure generates a random figure(triangle, circle, square, nil)
 func (g *generator) generateRandomFigure() figure {
-	switch rand.Intn(8) {
-	case 0:
+	switch rand.Intn(10) {
+	case 0, 3, 4, 5:
 		return g.generateSquare(g.squareSize, g.fgColor, color.RGBA{})
 	case 1:
 		return g.generateFilledTriangle(g.squareSize, g.fgColor, g.bgColor)
-	case 4:
+	case 2:
 		return g.generateFilledCircle(g.squareSize, g.fgColor, g.bgColor)
 	default:
 		return g.generateSquare(g.squareSize, g.bgColor, color.RGBA{})
