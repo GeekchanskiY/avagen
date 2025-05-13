@@ -25,14 +25,12 @@ func NewScene(width int, height int, BgColor, FgColor color.RGBA) *Scene {
 }
 
 func (s *Scene) Clear() {
-	for x := 0; x < s.Width; x++ {
-		for y := 0; y < s.Height; y++ {
-			s.SetPixel(x, y, &s.BgColor)
-		}
-	}
+	s.eachPixel(func(_, _ int) *color.RGBA {
+		return &s.BgColor
+	})
 }
 
-func (s *Scene) EachPixel(colorFunction func(int, int) *color.RGBA) {
+func (s *Scene) eachPixel(colorFunction func(int, int) *color.RGBA) {
 	for x := 0; x < s.Width; x++ {
 		for y := 0; y < s.Height; y++ {
 			s.SetPixel(x, y, colorFunction(x, y))

@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/GeekchanskiY/avagen/pkg/generators/standard"
 	"github.com/GeekchanskiY/avagen/pkg/scene"
 )
 
@@ -26,14 +27,18 @@ func main() {
 		height,
 		color.RGBA{
 			R: 0,
-			G: 255,
-			B: 255,
+			G: 0,
+			B: 0,
 			A: 255,
 		},
 		color.RGBA{R: 255, G: 255, B: 255, A: 255},
 	)
 
 	image.Clear()
+
+	if err = standard.NewGenerator().Generate(image); err != nil {
+		panic(err)
+	}
 
 	log.Printf("Time passed to generate: %s", time.Since(start))
 
