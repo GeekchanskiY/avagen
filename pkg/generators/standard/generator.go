@@ -3,6 +3,7 @@ package standard
 import (
 	"errors"
 	"image/color"
+	"math"
 
 	"github.com/GeekchanskiY/avagen/pkg/point"
 	"github.com/GeekchanskiY/avagen/pkg/scene"
@@ -38,6 +39,7 @@ func (g *generator) Generate(s *scene.Scene) error {
 	rotatedTriangleColors := g.rotate(triangleColors)
 	rotatedRevTriangleColors := g.rotateRev(triangleColors)
 	reversedTriangleColors := g.reverse(triangleColors)
+	circleColors := g.generateCircle(g.squareSize, s.FgColor, s.BgColor)
 
 	for i := 0; i < g.squareSize; i++ {
 		for j := 0; j < g.squareSize; j++ {
@@ -47,6 +49,7 @@ func (g *generator) Generate(s *scene.Scene) error {
 			s.Img.Set(i+g.squareSize*3, j, rotatedTriangleColors[i][j])
 			s.Img.Set(i+g.squareSize*4, j, reversedTriangleColors[i][j])
 			s.Img.Set(i+g.squareSize*5, j, rotatedRevTriangleColors[i][j])
+			s.Img.Set(i+g.squareSize*6, j, circleColors[i][j])
 		}
 	}
 
@@ -142,6 +145,34 @@ func (g *generator) generateTriangle(squareSize int, fg, bg color.RGBA) [][]colo
 	}
 
 	return squareColors
+}
+
+func (g *generator) generateCircle(squareSize int, fg, bg color.RGBA) [][]color.RGBA {
+	var (
+		radius = squareSize / 2
+		center = point.Point{
+			X: radius,
+			Y: radius,
+		}
+
+		circleColors = make([][]color.RGBA, squareSize)
+	)
+
+	radiusPow := math.Pow(float64(radius), 2)
+
+	for x := 0; x < squareSize; x++ {
+		circleColors[x] = make([]color.RGBA, squareSize)
+		for y := 0; y < squareSize; y++ {
+
+			if math.Pow(float64(center.X-x), 2)+math.Pow(float64(center.Y-y), 2) <= radiusPow {
+				circleColors[x][y] = fg
+			} else {
+				circleColors[x][y] = bg
+			}
+		}
+	}
+
+	return circleColors
 }
 
 func (g *generator) rotate(points [][]color.RGBA) [][]color.RGBA {
