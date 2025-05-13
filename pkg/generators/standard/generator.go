@@ -4,6 +4,7 @@ import (
 	"errors"
 	"image/color"
 	"math"
+	"math/rand"
 
 	"github.com/GeekchanskiY/avagen/pkg/point"
 	"github.com/GeekchanskiY/avagen/pkg/scene"
@@ -11,18 +12,22 @@ import (
 )
 
 type Generator interface {
-	Generate(s *scene.Scene) error
+	Generate(s *scene.Scene, numSquares int) error
 }
 
 type generator struct {
-	squareSize int
+	squareSize       int
+	bgColor, fgColor color.RGBA
 }
 
 func NewGenerator() Generator {
 	return &generator{}
 }
 
-func (g *generator) Generate(s *scene.Scene) error {
+type figure [][]color.RGBA
+
+// Generate takes a scene which it will edit, and numSquares in row
+func (g *generator) Generate(s *scene.Scene, numSquares int) error {
 	if s.Width != s.Height {
 		return errors.New("scene width and height must be equal")
 	}
@@ -31,35 +36,61 @@ func (g *generator) Generate(s *scene.Scene) error {
 		return errors.New("scene width must be greater than 8")
 	}
 
-	g.squareSize = s.Width / 8
+	g.squareSize = s.Width / numSquares
 
-	triangleColors := g.generateTriangle(g.squareSize, s.FgColor, s.BgColor)
-	squareColors := g.generateSquare(g.squareSize, s.FgColor, s.BgColor)
-	filledTriangleColors := g.generateFilledTriangle(g.squareSize, s.FgColor, s.BgColor)
-	rotatedTriangleColors := g.rotate(triangleColors)
-	rotatedRevTriangleColors := g.rotateRev(triangleColors)
-	reversedTriangleColors := g.reverse(triangleColors)
-	circleColors := g.generateCircle(g.squareSize, s.FgColor, s.BgColor)
-	circleFilledColors := g.generateFilledCircle(g.squareSize, s.FgColor, s.BgColor)
+	g.bgColor = getRandomBgColor()
+	g.fgColor = getRandomFgColor()
 
-	for i := 0; i < g.squareSize; i++ {
-		for j := 0; j < g.squareSize; j++ {
-			s.Img.Set(i, j, triangleColors[i][j])
-			s.Img.Set(i+g.squareSize*1, j, squareColors[i][j])
-			s.Img.Set(i+g.squareSize*2, j, filledTriangleColors[i][j])
-			s.Img.Set(i+g.squareSize*3, j, rotatedTriangleColors[i][j])
-			s.Img.Set(i+g.squareSize*4, j, reversedTriangleColors[i][j])
-			s.Img.Set(i+g.squareSize*5, j, rotatedRevTriangleColors[i][j])
-			s.Img.Set(i+g.squareSize*6, j, circleColors[i][j])
-			s.Img.Set(i+g.squareSize*7, j, circleFilledColors[i][j])
+	figures := make([][]figure, numSquares)
+	for i := 0; i < numSquares; i++ {
+		figures[i] = make([]figure, numSquares)
+		for j := 0; j < numSquares; j++ {
+			figures[i][j] = g.generateRandomFigure()
+			switch rand.Intn(5) {
+			case 2:
+				figures[i][j] = g.reverse(figures[i][j])
+			case 1:
+				figures[i][j] = g.rotate(figures[i][j])
+			case 0:
+				figures[i][j] = g.rotateRev(figures[i][j])
+			default:
+			}
+		}
+
+	}
+
+	for i := 0; i < numSquares; i++ {
+		for j := 0; j < numSquares; j++ {
+			for x := 0; x < g.squareSize; x++ {
+				for y := 0; y < g.squareSize; y++ {
+					s.Img.Set(x+i*g.squareSize, y+j*g.squareSize, figures[i][j][x][y])
+				}
+			}
 		}
 	}
 
 	return nil
 }
 
-func (g *generator) generateSquare(squareSize int, fg, _ color.RGBA) [][]color.RGBA {
-	squareColors := make([][]color.RGBA, squareSize)
+func (g *generator) generateRandomFigure() figure {
+	switch rand.Intn(8) {
+	case 0:
+		return g.generateSquare(g.squareSize, g.fgColor, color.RGBA{})
+	case 1:
+		return g.generateFilledTriangle(g.squareSize, g.fgColor, g.bgColor)
+	case 2:
+		return g.generateTriangle(g.squareSize, g.fgColor, g.bgColor)
+	case 3:
+		return g.generateCircle(g.squareSize, g.fgColor, g.bgColor)
+	case 4:
+		return g.generateFilledCircle(g.squareSize, g.fgColor, g.bgColor)
+	default:
+		return g.generateSquare(g.squareSize, g.bgColor, color.RGBA{})
+	}
+}
+
+func (g *generator) generateSquare(squareSize int, fg, _ color.RGBA) figure {
+	squareColors := make(figure, squareSize)
 	for i := 0; i < squareSize; i++ {
 		squareColors[i] = make([]color.RGBA, squareSize)
 	}
@@ -73,8 +104,8 @@ func (g *generator) generateSquare(squareSize int, fg, _ color.RGBA) [][]color.R
 	return squareColors
 }
 
-func (g *generator) generateFilledTriangle(squareSize int, fg, bg color.RGBA) [][]color.RGBA {
-	squareColors := make([][]color.RGBA, squareSize)
+func (g *generator) generateFilledTriangle(squareSize int, fg, bg color.RGBA) figure {
+	squareColors := make(figure, squareSize)
 	for i := 0; i < squareSize; i++ {
 		squareColors[i] = make([]color.RGBA, squareSize)
 	}
@@ -111,8 +142,8 @@ func (g *generator) generateFilledTriangle(squareSize int, fg, bg color.RGBA) []
 	return squareColors
 }
 
-func (g *generator) generateTriangle(squareSize int, fg, bg color.RGBA) [][]color.RGBA {
-	squareColors := make([][]color.RGBA, squareSize)
+func (g *generator) generateTriangle(squareSize int, fg, bg color.RGBA) figure {
+	squareColors := make(figure, squareSize)
 	for i := 0; i < squareSize; i++ {
 		squareColors[i] = make([]color.RGBA, squareSize)
 	}
@@ -149,7 +180,7 @@ func (g *generator) generateTriangle(squareSize int, fg, bg color.RGBA) [][]colo
 	return squareColors
 }
 
-func (g *generator) generateCircle(squareSize int, fg, bg color.RGBA) [][]color.RGBA {
+func (g *generator) generateCircle(squareSize int, fg, bg color.RGBA) figure {
 	var (
 		radius = (squareSize - 2) / 2
 		center = point.Point{
@@ -157,7 +188,7 @@ func (g *generator) generateCircle(squareSize int, fg, bg color.RGBA) [][]color.
 			Y: squareSize / 2,
 		}
 
-		circleColors = make([][]color.RGBA, squareSize)
+		circleColors = make(figure, squareSize)
 	)
 
 	radiusPow := math.Pow(float64(radius), 2)
@@ -177,7 +208,7 @@ func (g *generator) generateCircle(squareSize int, fg, bg color.RGBA) [][]color.
 	return circleColors
 }
 
-func (g *generator) generateFilledCircle(squareSize int, fg, bg color.RGBA) [][]color.RGBA {
+func (g *generator) generateFilledCircle(squareSize int, fg, bg color.RGBA) figure {
 	var (
 		radius = (squareSize - 2) / 2
 		center = point.Point{
@@ -185,7 +216,7 @@ func (g *generator) generateFilledCircle(squareSize int, fg, bg color.RGBA) [][]
 			Y: squareSize / 2,
 		}
 
-		circleColors = make([][]color.RGBA, squareSize)
+		circleColors = make(figure, squareSize)
 	)
 
 	radiusPow := math.Pow(float64(radius), 2)
@@ -205,9 +236,9 @@ func (g *generator) generateFilledCircle(squareSize int, fg, bg color.RGBA) [][]
 	return circleColors
 }
 
-func (g *generator) rotate(points [][]color.RGBA) [][]color.RGBA {
+func (g *generator) rotate(points figure) figure {
 	var (
-		newPoints     [][]color.RGBA
+		newPoints     figure
 		width, height int
 	)
 
@@ -219,7 +250,7 @@ func (g *generator) rotate(points [][]color.RGBA) [][]color.RGBA {
 		return points
 	}
 
-	newPoints = make([][]color.RGBA, height)
+	newPoints = make(figure, height)
 	for i := 0; i < height; i++ {
 		newPoints[i] = make([]color.RGBA, width)
 		for j := 0; j < width; j++ {
@@ -230,9 +261,9 @@ func (g *generator) rotate(points [][]color.RGBA) [][]color.RGBA {
 	return newPoints
 }
 
-func (g *generator) rotateRev(points [][]color.RGBA) [][]color.RGBA {
+func (g *generator) rotateRev(points figure) figure {
 	var (
-		newPoints     [][]color.RGBA
+		newPoints     figure
 		width, height int
 	)
 
@@ -244,7 +275,7 @@ func (g *generator) rotateRev(points [][]color.RGBA) [][]color.RGBA {
 		return points
 	}
 
-	newPoints = make([][]color.RGBA, height)
+	newPoints = make(figure, height)
 	for i := height; i > 0; i-- {
 		newPoints[height-i] = make([]color.RGBA, width)
 		for j := width; j > 0; j-- {
@@ -255,9 +286,9 @@ func (g *generator) rotateRev(points [][]color.RGBA) [][]color.RGBA {
 	return newPoints
 }
 
-func (g *generator) reverse(points [][]color.RGBA) [][]color.RGBA {
+func (g *generator) reverse(points figure) figure {
 	var (
-		newPoints     [][]color.RGBA
+		newPoints     figure
 		width, height int
 	)
 
@@ -269,7 +300,7 @@ func (g *generator) reverse(points [][]color.RGBA) [][]color.RGBA {
 		return points
 	}
 
-	newPoints = make([][]color.RGBA, width)
+	newPoints = make(figure, width)
 
 	for i := 0; i < width; i++ {
 		newPoints[i] = make([]color.RGBA, height)

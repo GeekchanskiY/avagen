@@ -36,7 +36,7 @@ func main() {
 
 	image.Clear()
 
-	if err = standard.NewGenerator().Generate(image); err != nil {
+	if err = standard.NewGenerator().Generate(image, 8); err != nil {
 		panic(err)
 	}
 
