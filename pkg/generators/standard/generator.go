@@ -41,6 +41,7 @@ func (g *generator) Generate(s *scene.Scene, numSquares int) error {
 	g.bgColor = getRandomBgColor()
 	g.fgColor = getRandomFgColor()
 
+	// Generate figures
 	figures := make([][]figure, numSquares)
 	for i := 0; i < numSquares; i++ {
 		figures[i] = make([]figure, numSquares)
@@ -59,6 +60,7 @@ func (g *generator) Generate(s *scene.Scene, numSquares int) error {
 
 	}
 
+	// Draw figures on the scene
 	for i := 0; i < numSquares; i++ {
 		for j := 0; j < numSquares; j++ {
 			for x := 0; x < g.squareSize; x++ {
@@ -72,6 +74,7 @@ func (g *generator) Generate(s *scene.Scene, numSquares int) error {
 	return nil
 }
 
+// generateRandomFigure generates a random figure(triangle, circle, square, nil)
 func (g *generator) generateRandomFigure() figure {
 	switch rand.Intn(8) {
 	case 0:
